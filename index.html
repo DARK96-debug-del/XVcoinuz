@@ -1,0 +1,46 @@
+import os
+from flask import Flask, request, jsonify
+import telegram
+
+# Flask server yaratish
+app = Flask(__name__)
+
+# Telegram bot tokeningiz
+TOKEN = '7317047032:AAFMJdTL1yZ-l9h16JvbNwOmuxC87VU28LA'
+bot = telegram.Bot(token=TOKEN)
+
+# Admin ID (javoblar faqat admin uchun)
+ADMIN_ID = '7098943602'
+
+# Webhook URLni Telegram bot API orqali o‘rnatish
+@app.route('/set_webhook', methods=['GET'])
+def set_webhook():
+    # Sizning server URL'nizni quyida kiritishingiz kerak
+    webhook_url = "https://freeucbot.onrender.com/webhook"  # O'zgartiring bu URL'ni Render yoki boshqa serverda joylashtirgandan so'ng
+    url = f"https://api.telegram.org/bot{TOKEN}/setWebhook?url={webhook_url}"
+    response = os.system(f"curl {url}")  # Webhook URL'ni o‘rnatish uchun curl buyruği
+    return jsonify({"status": "Webhook set", "response": response})
+
+
+@app.route('/webhook', methods=['POST'])
+def webhook():
+    # Telegram botga kelgan xabarni olish
+    data = request.get_json()
+
+    # Foydalanuvchidan kelgan xabarni olish
+    message = data['message']
+    chat_id = message['chat']['id']
+    text = message.get('text')
+
+    # Javob berish uchun xabar yuborish
+    if text:
+        # Adminni bildiradi
+        if chat_id == int(ADMIN_ID):
+            bot.send_message(chat_id=chat_id, text="Admin, sizni xabaringiz qabul qilindi!")
+        else:
+            bot.send_message(chat_id=chat_id, text="Xabaringiz adminga yuborildi.")
+    return 'OK', 200
+
+# Flask serverni ishga tushirish
+if __name__ == '__main__':
+    app.run(debug=True, host='0.0.0.0', port=5000)
